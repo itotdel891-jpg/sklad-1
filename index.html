@@ -1,73 +1,89 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<title>Склад — Google Sheets</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body{font-family:Arial;background:#f4f6f8}
-.container{max-width:900px;margin:30px auto;background:#fff;padding:20px;border-radius:10px}
-h2{text-align:center}
-select{padding:8px;width:100%;margin-bottom:15px}
-table{width:100%;border-collapse:collapse}
-th,td{border:1px solid #ddd;padding:8px;text-align:left}
-th{background:#0a7cff;color:#fff}
-</style>
+  <meta charset="UTF-8">
+  <title>Учёт номенклатуры (шт)</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f4f6f8; }
+    .container { max-width:650px; margin:30px auto; background:#fff; padding:20px; border-radius:10px; }
+    h2 { text-align:center; }
+    .item { display:flex; justify-content:space-between; align-items:center; margin:8px 0; }
+    .item span { max-width:70%; }
+    input { width:90px; padding:6px; text-align:center; }
+    button { width:100%; padding:12px; margin-top:15px; background:#0a7cff; color:#fff; border:none; cursor:pointer; border-radius:6px; }
+    .total { margin-top:10px; font-weight:bold; text-align:right; }
+  </style>
 </head>
 <body>
-
 <div class="container">
-<h2>Учёт склада</h2>
+  <h2>Учёт номенклатуры (шт)</h2>
 
-<select id="warehouseSelect"></select>
+  <div id="list"></div>
 
-<table id="table">
-<tr><td>Загрузка...</td></tr>
-</table>
+  <div class="total">Итого, шт: <span id="total">0</span></div>
+
+  <button onclick="send()">Отправить</button>
+  <p id="status"></p>
 </div>
 
 <script>
-const API_URL = "const API_URL = "https://script.google.com/macros/s/AKfycbyDcnhGHF-Ck76yBZjIuiK6P5ftHLYg1PqyfNoLbnyiiBsQTOPkyEls2L8a5C5nFV3mlQ/exec";
-";
+const URL = "ВСТАВЬ_URL_WEB_APP";
 
-let data = [];
+const items = [
+  'Сэндвич "Классический"',
+  'Сэндвич "С курицей"',
+  'Сэндвич "Сырный Соус"',
+  'Сэндвич "PICNIC"',
+  'Сэндвич "KEBAB"',
+  'Хот-Дог',
+  'Гамбургер с котлетой',
+  'Сэндвич "STRIPS" с сырным соусом',
+  'Сэндвич "Мехико"',
+  'Пицца "PEPPERONI"',
+  'Пицца "CHICKEN"',
+  'Пицца "SPICY"',
+  'Крылышки',
+  'Burrito стрипсы',
+  'Булочка Ярославка',
+  'Багет пшеничный',
+  'Ролл',
+  'Лаваш',
+  'Тостовый хлеб',
+  'Батон нарезной',
+  'Батон к чаю',
+  'Батон отрубной',
+  'Батон "Особый"',
+  'Булочки для фуда БУРГЕР',
+  'Булочки для фуда Хот-Дог'
+];
 
-async function loadData(){
-  const res = await fetch(API_URL);
-  data = await res.json();
-  initWarehouses();
+const list = document.getElementById('list');
+items.forEach((name, i) => {
+  list.innerHTML += `
+    <div class="item">
+      <span>${name}</span>
+      <input type="number" min="0" value="0" id="i${i}" oninput="calc()">
+    </div>`;
+});
+
+function calc(){
+  let sum = 0;
+  items.forEach((_, i) => sum += Number(document.getElementById('i'+i).value || 0));
+  total.innerText = sum;
 }
 
-function initWarehouses(){
-  const select = document.getElementById("warehouseSelect");
-  const warehouses = [...new Set(data.map(d=>d.Склад))];
-  select.innerHTML = warehouses.map(w=>`<option>${w}</option>`).join("");
-  select.onchange = render;
-  render();
+function send(){
+  const data = items.map((name, i) => ({
+    name,
+    qty: Number(document.getElementById('i'+i).value || 0)
+  }));
+
+  fetch(URL, {
+    method: 'POST',
+    body: JSON.stringify({ total: total.innerText, rows: data })
+  }).then(()=>status.innerText='Данные отправлены ✔');
 }
-
-function render(){
-  const w = warehouseSelect.value;
-  const rows = data.filter(d=>d.Склад===w);
-
-  let html = `<tr>
-    <th>Номенклатура</th>
-    <th>Количество</th>
-  </tr>`;
-
-  rows.forEach(r=>{
-    html += `<tr>
-      <td>${r.Номенклатура}</td>
-      <td>${r.Количество}</td>
-    </tr>`;
-  });
-
-  table.innerHTML = html;
-}
-
-loadData();
 </script>
-
 </body>
 </html>
-
